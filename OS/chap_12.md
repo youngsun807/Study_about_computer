@@ -1,0 +1,63 @@
+# ----disk management and scheduling----
+### 디스크 구조
+- 논리블럭
+    - 디스크 단위정보 저장공간들
+    - 주소를 가진 1차원 배열 취급
+    - 정보 전송하는 최소단위
+- sector
+    - 논리블럭이 물리적인 디스크에 매핑된 위치
+    - sector 0 = 최외곽 실린더 첫 트랙의 첫 sector
+---
+### 디스크 관리
+- physical formatting(low level formatting)
+    - sector단위로 나누는 과정
+    - 각 sector = (header + trailer) + 실제 데이터
+    - header와 trailer는 sector number, ECC(error correcting code, 에러 확인) 등의 정보 저장 
+- partitioning
+    - sector을 묶어서 logical disk로 만듦
+- logical formatting
+    - 파일시스템 설치
+    - FAT, Inode, free space...
+- booting
+---
+### disk scheduling
+- seek time 최소화 목표
+- access time
+    - seek time
+        - 헤드를 해당 실린더로 움직이는 시간
+        - 가장 오래 걸림
+    - rotational latency
+        - 헤드가 원하는 sector에 도달하기까지 걸리는 회전지연시간
+    - transfer time
+        - 실제 데이터 전송시간
+- disk bandwith
+    - 단위 시간 당 전송된 바이트 수
+- 알고리즘
+    - FCFS
+    - SSTF
+        - 현재 head 위치에서 가장 가까운 요청을 먼저 해결
+        - 문제점
+            - starvation 문제
+    - SCAN
+        - disk head 계속 안쪽에서 바깥쪽으로 가면서 요청이 있으면 해결함
+        - 문제점
+            - 실린더 위치에 따라 대기 시간이 다름
+    - C-SCAN(circular)
+        - disk head가 SCAN처럼 이동하되 끝에 다르면 무조건 출발위치로 이동
+        - 길목에서 모든 요청 처리
+        - 출발지점으로 돌아올 땐 처리X
+        - 균일한 대기시간
+    - N-SCAN
+        - 이동하면서 출발하면서 이미 queue에 있던것은 처리
+        - 이동와중에 들어온 요청은 다음번에 처리
+        - 대기시간 편차 감소
+    - LOOK
+        - 움직이는 방향에서 앞으로 요청이 없으면 방향을 바꿈
+    - C-LOOK
+        - 움직이는 방향에서 앞으로 요청이 없으면 방향을 바꿈
+        - 제일 낮은 위치로 돌아갈 때는 처리X
+---
+### swap space 관리
+- 메모리 연장 공간으로 디스크 사용 ---> swap area 용도
+- 공간효율성 < 속도 효율성
+- 대용량 단위로 올리고 내림

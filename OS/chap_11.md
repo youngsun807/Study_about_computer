@@ -1,0 +1,124 @@
+# ----file implementation-----
+### 디스크에 파일저장방법
+- 동일한 크기의 sector 단위(논리적인 block)로 저장
+- contiguous(연속)
+    > 하나의 파일이 연속해서 저장
+    - 장점
+        - 빠른 I/O
+            - seek할 때 많은 양 가져옴
+            - swapping시 유용
+        - 직접 접근 가능
+    - 단점
+        - 외부조각 발생
+            - 블럭 크기 불균일
+        - 파일 변동 제약
+- linked(연결)
+    - 빈 위치면 저장될 수 있음
+    - 시작위치, 끝위치 저장하고 블럭마다 따라가야 다음 위치 알 수 있음
+    - 장점
+        - 외부조각 발생X
+    - 단점
+        - 직접접근 불가
+        - 신뢰성 문제
+            - 유실된 부분이 생기면 많은 부분 문제
+        - 포인터만큼의 용량 감소 ---> 공간 비효율성
+- indexed
+    - 블럭 하나에 저장된 공간 index를 저장
+    - 장점
+        - 외부조각 발생X
+        - 직접접근 가능
+    - 단점
+        - 공간낭비
+            - 실제로 많은 file이 작음
+        - 큰 file일 경우 하나의 블럭에 모두 저장 못함
+            - 보안방법
+                - linked scheme 사용
+                    - 블럭 마지막에 다른 index 연결해놓음
+                - multi-level index
+                    - 블럭내에 다른 블럭 index를 선택
+                    - index를 위한 공간낭비 발생
+---
+- UNIX 파일시스템 구조
+    - boot block
+        > 부팅에 필요한 정보
+    - superblock
+        - 사용중인 블럭, 어디부터 datablock이 있는지 등 총체적으로 관린
+    - Inode list
+        - 디렉토리가 file 메타데이터를 다 가지고 있지 않음
+        - 파일 이름을 제외한 메타데이터를 빼서 보관
+        - Inode : file = 1:1
+    - data block
+        - 파일을 실제 내용 보관
+- FAT file system
+    - boot block
+    - FAT
+        - 작은 테이블
+        - 여러 copy ---> reliability 증가
+        - 파일 메타데이터 일부저장(위치정보)
+        - 나머지는 directory에 저장
+        - 장점
+            - 직접접근 가능
+    - root directory
+    - data block
+---
+### free space 관리
+- bit map(bit vector)
+    - 0과 1로 사용여부 표시
+    - 장점
+        - 연속적인 빈 블럭을 찾는데 효과적
+    - 단점
+        - 디스트에 부가적인 공간 필요
+- linked list(≒ linked allocation)
+    - 비어있는 블럭 처음 위치만 가지고 있고 그 다음 위치는 다음 블럭에 가야 알 수 있음
+    - 장점
+        - 추가적인 공간 필요X
+    - 단점
+        - 연속적인 공간 찾기 어려움
+- grouping(≒ index allocation)
+    - 비어있는 위치가 index역할
+    - 비어있는 블럭 내에 빈 블럭들 index들 저장
+    - 장점
+        - 비어있는 블럭을 한꺼번에 찾기 linked보다 좀 더 수월 
+    - 단점
+        - 연속적인 빈공간 찾기 어려움
+- counting
+    - 빈 블럭의 처음위치와 그 다음 연속으로 있는 빈 블럭 갯수 관리
+---
+### 디렉토리 구현
+> 디렉토리 밑의 파일 메타데이터 관리
+- linear list
+    - 파일 이름, 메타데이터를 순차적으롲 저장
+    - 크기 고정적
+    - 특정 파일을 찾을 때 전체 검색
+    - 장점
+        - 구현 간단
+    - 단점
+        - 전체 검색으로 비효율적
+- hash table
+    ```
+    hash 함수
+    어떤 input값이 주어지더라도 결과값이 특정범위 안의 숫자로 한정
+    ```
+    - 파일의 이름을 hash 함수 적용해서 나온 결과 entry값을 찾아서 메타데이터 저장
+- 긴 파일 이름 지원
+    - 일반적인 entry 크기는 고정
+    - entry 크기를 넘어가면 pointer로 연결해서 끝부터 거꾸로 순서대로 저장
+---
+- VFS(virtual file system)
+    - 다양한 file system에 대해 동일한 시스템 콜 인터페이스를 통해 접근할 수 있도록 해주는 OS의 layer
+- NFS(network file system)
+    - 분산 시스템에서 네트워크를 통해 파일 공유
+---
+### page cache & buffer cache
+- page cache
+    - paging system에서 사용하는 page frame을 캐싱의 관점에서 설명하는 용어
+    - OS에게 주어지는 정보 제한적
+- memory mapped I/O
+    - 파일 접근시 파일의 일정부분을 메모리 부분에 mapping
+    - 그 메모리 부분에 read,write
+    - 메모리에 올라오면 OS 개입없이 메모리 접근처럼 읽고 쓸 수 있음
+- buffer cache
+    - 파일의 데이터를 사용자가 요청했을 때 디스크에서 읽어서 OS가 자신의 영역 중 일부에 저장하고 나중에 다시 요청했을 때 디스크까지 가지 않고 즉시 전달
+- unified buffer cache
+    - page cache + buffer cache
+    - buffer도 page 단위로 관리
